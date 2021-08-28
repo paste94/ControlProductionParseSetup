@@ -25,6 +25,7 @@ services:
       - PARSE_DATABASE_NAME=bitnami_parse
       - PARSE_DATABASE_PASSWORD=bitnami123
       - PARSE_ENABLE_CLOUD_CODE=yes
+      - PARSE_APP_ID=ParseServerAzzalin
     volumes:
       - 'parse_data:/bitnami'
       - './cloud/main.js:/cloud/main.js'
