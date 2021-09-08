@@ -19,6 +19,7 @@ services:
     depends_on:
       - mongodb
     environment:
+      - PARSE_HOST=localhost:1337
       - PARSE_DATABASE_HOST=mongodb
       - PARSE_DATABASE_PORT_NUMBER=27017
       - PARSE_DATABASE_USER=bn_parse
@@ -29,17 +30,6 @@ services:
     volumes:
       - 'parse_data:/bitnami'
       - './cloud/main.js:/cloud/main.js'
-  parse-dashboard:
-    image: docker.io/bitnami/parse-dashboard
-    ports:
-      - '80:4040'
-    environment:
-      - PARSE_DASHBOARD_USER=bn_parse
-      - PARSE_DASHBOARD_PASSWORD=bitnami123
-    volumes:
-      - 'parse_dashboard_data:/bitnami'
-    depends_on:
-      - parse
 volumes:
   mongodb_data:
     driver: local
