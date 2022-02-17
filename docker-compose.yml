@@ -16,6 +16,8 @@ services:
       - '1337:1337'
     volumes:
       - '../parse_data:/bitnami/parse'
+      - '../parse_data:/bitnami'
+      - './cloud/main.js:/cloud/main.js'
     depends_on:
       - mongodb
     environment:
@@ -28,9 +30,6 @@ services:
       - PARSE_APP_ID=EasyBudgetingServer
       - PARSE_MASTER_KEY=3b_m4st3r_k3y
       - PARSE_APP_NAME=EasyBudgeting
-    volumes:
-      - '../parse_data:/bitnami'
-      - './cloud/main.js:/cloud/main.js'
   parse-dashboard:
     image: docker.io/bitnami/parse-dashboard
     ports:
