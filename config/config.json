@@ -1,0 +1,11 @@
+{
+  "appId": "ControlProductionServer",
+  "masterKey": "CP_m4st3r_k3y",
+  "appName": "ControlProduction",
+  "mountPath": "/parse",
+  "port": "1337",
+  "host": "0.0.0.0",
+  "serverURL": "http://127.0.0.1/parse",
+  "databaseURI": "mongodb://bn_parse:bitnami123@mongodb:27017/bitnami_parse",
+  "cloud": "./cloud/main.js"
+}

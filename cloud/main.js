@@ -65,3 +65,8 @@ Parse.Cloud.afterSave('lavori', (request) => {
     .catch( error => console.error("Got an error " + error.code + " : " + error.message) );
 })
 
+Parse.Cloud.afterSave('commesse', (request => {
+  console.log("CLOUD CODE - commesse afterSave triggered with ", request.object)
+  
+}))
+

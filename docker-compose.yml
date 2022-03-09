@@ -1,53 +1,37 @@
-version: '2'
+version: '3'
 services:
-  mongodb:
-    image: docker.io/bitnami/mongodb
-    volumes:
-      - '../mongodb_data:/bitnami/mongodb'
-    environment:
-      - MONGODB_USERNAME=easy_budgeting_mongo
-      - MONGODB_DATABASE=easy_budgeting_mongo_db
-      - MONGODB_PASSWORD=3b_m0ng0
-    ports: 
-      - 27017:27017
-  parse:
-    image: docker.io/bitnami/parse
-    ports:
-      - '1337:1337'
-    volumes:
-      - '../parse_data:/bitnami/parse'
-      - '../parse_data:/bitnami'
-      - './cloud/main.js:/cloud/main.js'
-    depends_on:
-      - mongodb
-    environment:
-      - PARSE_DATABASE_HOST=mongodb
-      - PARSE_DATABASE_PORT_NUMBER=27017
-      - PARSE_DATABASE_USER=easy_budgeting_mongo
-      - PARSE_DATABASE_NAME=easy_budgeting_mongo_db
-      - PARSE_DATABASE_PASSWORD=3b_m0ng0
-      - PARSE_ENABLE_CLOUD_CODE=yes
-      - PARSE_APP_ID=EasyBudgetingServer
-      - PARSE_MASTER_KEY=3b_m4st3r_k3y
-      - PARSE_APP_NAME=EasyBudgeting
-  parse-dashboard:
-    image: docker.io/bitnami/parse-dashboard
-    ports:
-      - '4040:4040'
-    environment: 
-      - PARSE_DASHBOARD_PARSE_APP_ID=EasyBudgetingServer
-      - PARSE_DASHBOARD_PARSE_APP_NAME=EasyBudgeting
-      - PARSE_DASHBOARD_PARSE_MASTER_KEY=3b_m4st3r_k3y
-      - PARSE_DASHBOARD_USERNAME=admin
-      - PARSE_DASHBOARD_PASSWORD=admin
-    volumes:
-      - '../parse_dashboard_data:/bitnami'
-    depends_on:
-      - parse
-volumes:
-  mongodb_data:
-    driver: local
-  parse_data:
-    driver: local
-  parse_dashboard_data:
-    driver: local
+
+    mongo:
+        image: mongo
+        ports:
+            - 27017:27017
+        volumes:
+            - ./data-db:/data/db
+
+    parse:
+        image: parseplatform/parse-server
+        ports:
+            - 1337:1337
+        links:
+            - mongo
+        volumes:
+            - './cloud/main.js:/parse-server/cloud/main.js'  
+        environment:
+            - PARSE_SERVER_APPLICATION_ID=ControlProductionServer
+            - PARSE_SERVER_MASTER_KEY=CP_m4st3r_k3y
+            - PARSE_SERVER_DATABASE_URI=mongodb://mongo:27017/control_production_db
+            - PARSE_SERVER_START_LIVE_QUERY_SERVER=1
+            - PARSE_SERVER_LIVE_QUERY={"classNames":["commesse", "impiegati", "lavori", "macchine", "articoli", "preventivo"]}
+
+    dashboard:
+        image: parseplatform/parse-dashboard
+        ports:
+            - 4040:4040
+        environment:
+            - PARSE_DASHBOARD_SERVER_URL=http://localhost:1337/parse
+            - PARSE_DASHBOARD_APP_ID=ControlProductionServer
+            - PARSE_DASHBOARD_MASTER_KEY=CP_m4st3r_k3y
+            - PARSE_DASHBOARD_APP_NAME=MyApp
+            - PARSE_DASHBOARD_ALLOW_INSECURE_HTTP=1
+            - PARSE_DASHBOARD_USER_ID=user
+            - PARSE_DASHBOARD_USER_PASSWORD=pass

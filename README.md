@@ -16,3 +16,6 @@ Questo progetto consente l'installazione di un database mongodb, un server Parse
     ```
     127.0.0.1 parse
     ```
+
+## TODO: Aggiungere la password! 
+(Nel file FUNZIONANTE la password va, ma appena si prova a morificarla non funziona più :()
