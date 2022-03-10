@@ -65,32 +65,47 @@ Parse.Cloud.afterSave('lavori', (request) => {
     .catch( error => console.error("Got an error " + error.code + " : " + error.message) );
 })
 
+/**
+ * Aggiunge i campi totPreventivo e totOre alla commessa creata, se non presenti. 
+ */
 Parse.Cloud.beforeSave('commesse', (request => {
-  request.object.set('totPreventivo', 0)
-  request.object.set('totOre', 0)
+  if (request.object.get( 'totPreventivo' ) === undefined){
+    request.object.set('totPreventivo', 0)
+  }
+  if (request.object.get( 'totOre' ) === undefined){
+    request.object.set('totOre', 0)
+  }
 }))
 
-Parse.Cloud.beforeSave('preventivo', (request => {
+/**
+ * Dopo il salvataggio o la modifica di un preventivo, calcola il totale delle ore e del
+ * prezzo della commessa e aggiunge un campo alla commessa con totale delle ore e 
+ * totale del prezzo.
+ */
+Parse.Cloud.afterSave('preventivo', (request => {
   console.log("CLOUD CODE - preventivo afterSave triggered with ", request.object)
   new Parse.Query('preventivo')
+    // Seleziona tutti gli elementi non eliminati
     .notEqualTo('eliminato', true)
+    // Seleziona tutti gli elementi che hanno lo stesso parent dell'elemento modificato o creato
+    .equalTo('parent', request.object.get('parent'))
     .find()
     .then(result => {
       let totPreventivo = 0
       let totOre = 0
-      console.log("RESULT", request)
+      // Somma i valori da aggregare
       result.forEach(elem => {
         totPreventivo = totPreventivo + elem.attributes.totPreventivo
         totOre = totOre + elem.attributes.totOre
       })
+      // Salva le somme come campi nella commessa parent
       new Parse.Query('commesse')
         .get(request.object.get('parent'))
         .then(commessa => {
-          commessa.set('totPreventivo', totPreventivo).save()
-          commessa.set('totOre', totOre).save()
-          console.log('totPreventivo', totPreventivo)
-          console.log('totOre', totOre)
-          console.log('COMMESSA', commessa)
+          commessa
+            .set('totPreventivo', totPreventivo)
+            .set('totOre', totOre)
+            .save()
         })
     })
 }))
