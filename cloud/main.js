@@ -65,8 +65,37 @@ Parse.Cloud.afterSave('lavori', (request) => {
     .catch( error => console.error("Got an error " + error.code + " : " + error.message) );
 })
 
-Parse.Cloud.afterSave('commesse', (request => {
-  console.log("CLOUD CODE - commesse afterSave triggered with ", request.object)
-  
+Parse.Cloud.beforeSave('commesse', (request => {
+  request.object.set('totPreventivo', 0)
+  request.object.set('totOre', 0)
 }))
 
+Parse.Cloud.beforeSave('preventivo', (request => {
+  console.log("CLOUD CODE - preventivo afterSave triggered with ", request.object)
+  new Parse.Query('preventivo')
+    .notEqualTo('eliminato', true)
+    .find()
+    .then(result => {
+      let totPreventivo = 0
+      let totOre = 0
+      console.log("RESULT", request)
+      result.forEach(elem => {
+        totPreventivo = totPreventivo + elem.attributes.totPreventivo
+        totOre = totOre + elem.attributes.totOre
+      })
+      new Parse.Query('commesse')
+        .get(request.object.get('parent'))
+        .then(commessa => {
+          commessa.set('totPreventivo', totPreventivo).save()
+          commessa.set('totOre', totOre).save()
+          console.log('totPreventivo', totPreventivo)
+          console.log('totOre', totOre)
+          console.log('COMMESSA', commessa)
+        })
+    })
+}))
+
+Parse.Cloud.define('hello', req => {
+  req.log.info(req);
+  return 'Hi';
+});

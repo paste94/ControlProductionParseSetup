@@ -18,6 +18,7 @@ services:
             - './cloud/main.js:/parse-server/cloud/main.js'  
         environment:
             - PARSE_SERVER_APPLICATION_ID=ControlProductionServer
+            - PARSE_SERVER_CLOUD=/parse-server/cloud/main.js
             - PARSE_SERVER_MASTER_KEY=CP_m4st3r_k3y
             - PARSE_SERVER_DATABASE_URI=mongodb://mongo:27017/control_production_db
             - PARSE_SERVER_START_LIVE_QUERY_SERVER=1

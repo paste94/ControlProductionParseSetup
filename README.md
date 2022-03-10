@@ -19,3 +19,11 @@ Questo progetto consente l'installazione di un database mongodb, un server Parse
 
 ## TODO: Aggiungere la password! 
 (Nel file FUNZIONANTE la password va, ma appena si prova a morificarla non funziona più :()
+
+
+
+
+
+
+
+lib/Optiond/Definitions.js
