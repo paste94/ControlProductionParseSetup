@@ -114,3 +114,41 @@ Parse.Cloud.define('hello', req => {
   req.log.info(req);
   return 'Hi';
 });
+
+function timeDiffCalc(dateFuture, dateNow) {
+  let diffInMilliSeconds = Math.abs(dateFuture - dateNow) / 1000;
+
+  // calculate days
+  const days = Math.floor(diffInMilliSeconds / 86400);
+  diffInMilliSeconds -= days * 86400;
+
+  // calculate hours
+  const hours = Math.floor(diffInMilliSeconds / 3600) % 24;
+  diffInMilliSeconds -= hours * 3600;
+
+  // calculate minutes
+  const minutes = Math.floor(diffInMilliSeconds / 60) % 60;
+  diffInMilliSeconds -= minutes * 60;
+
+  let difference = '';
+  if (days > 0) {
+    difference += (days === 1) ? `${days} g, ` : `${days} g, `;
+  }
+
+  difference += (hours === 0 || hours === 1) ? `${hours} h, ` : `${hours} h, `;
+
+  difference += (minutes === 0 || hours === 1) ? `${minutes} m` : `${minutes} m`; 
+
+  return difference;
+}
+
+/**
+ * Calcola la differenza di tempo tra le due date in ORE 
+ */
+ Parse.Cloud.beforeSave('lavori', (request => {
+  if (request.object.get( 'fine' ) !== undefined){
+    const diff = timeDiffCalc(request.object.get( 'fine' ), request.object.get( 'inizio' ))
+    console.log('*****DIFF******', timeDiffCalc(request.object.get( 'fine' ), request.object.get( 'inizio' )))
+    request.object.set('tempo', diff.toString())
+  }
+}))
