@@ -7,6 +7,7 @@ services:
             - 27017:27017
         volumes:
             - ./data-db:/data/db
+        restart: always
 
     parse:
         image: parseplatform/parse-server
@@ -23,6 +24,7 @@ services:
             - PARSE_SERVER_DATABASE_URI=mongodb://mongo:27017/control_production_db
             - PARSE_SERVER_START_LIVE_QUERY_SERVER=1
             - PARSE_SERVER_LIVE_QUERY={"classNames":["commesse", "impiegati", "lavori", "macchine", "articoli", "preventivo"]}
+        restart: always
 
     dashboard:
         image: parseplatform/parse-dashboard
@@ -36,3 +38,4 @@ services:
             - PARSE_DASHBOARD_ALLOW_INSECURE_HTTP=1
             - PARSE_DASHBOARD_USER_ID=user
             - PARSE_DASHBOARD_USER_PASSWORD=pass
+        restart: always
