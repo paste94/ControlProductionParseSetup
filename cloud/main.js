@@ -111,8 +111,59 @@ Parse.Cloud.afterSave('preventivo', (request => {
 }))
 
 Parse.Cloud.define('hello', req => {
-  req.log.info(req);
-  return 'Hi';
+  req.log.info('reqlog',req);
+  return 'req:', req;
+});
+
+function cloneCommessa(commessaId){
+  new Parse.Query('commesse').get(commessaId)
+    .then(
+      current => {
+        var currentAttr = current.attributes
+        console.log("ATTR: ", currentAttr)
+        const copyObj = new Parse.Object('commesse')
+        Object.keys(currentAttr).forEach(
+          key => copyObj.set(key, currentAttr[key]))
+        copyObj
+          .save()
+          .then(newObj => clonePreventivi(commessaId, newObj.id))
+      }
+    )
+}
+
+function clonePreventivi(commessaId, newId){
+  new Parse.Query('preventivo')
+    .equalTo('parent', commessaId)
+    .find()
+    .then(
+      results => {
+        results.forEach(
+          current => {
+            var currentAttr = current.attributes
+            const copyObj = new Parse.Object('preventivo')
+            console.log('***************************************')
+            console.log('OLD:', commessaId)
+            console.log('NEW:', newId)
+            console.log('currentAttr:', currentAttr)
+            Object.keys(currentAttr).forEach(
+              key => copyObj.set(key, currentAttr[key])
+            )
+            copyObj.set('parent', newId)
+            copyObj.save()
+          }
+        )
+      }
+    )
+}
+
+Parse.Cloud.define("cloneCommessa", (request) =>  {
+  // params: passed in the job call
+  // headers: from the request that triggered the job
+  // log: the ParseServer logger passed in the request
+  // message: a function to update the status message of the job object
+  const { params, headers, log, message } = request;
+  cloneCommessa(params.commessaId)
+  return 'req:', request;
 });
 
 function timeDiffCalc(dateFuture, dateNow) {
