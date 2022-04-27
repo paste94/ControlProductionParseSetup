@@ -115,22 +115,30 @@ Parse.Cloud.define('hello', req => {
   return 'req:', req;
 });
 
-function cloneCommessa(commessaId){
-  new Parse.Query('commesse').get(commessaId)
-    .then(
-      current => {
-        var currentAttr = current.attributes
-        console.log("ATTR: ", currentAttr)
-        const copyObj = new Parse.Object('commesse')
-        Object.keys(currentAttr).forEach(
-          key => copyObj.set(key, currentAttr[key]))
-        copyObj
-          .save()
-          .then(newObj => clonePreventivi(commessaId, newObj.id))
-      }
-    )
+/**
+ * Clona la commessa
+ * @param {string} commessaId id della commessa da clomnre
+ * @param {string} nome nome della nuova commessa 
+ * @param {string} numero numero della nuova commessa 
+ * @param {string} data_offerta data_offerta della nuova commessa 
+ * @param {string} data_consegna data_consegna della nuova commessa 
+ */
+function cloneCommessa(commessaId, nome, numero, data_offerta, data_consegna){
+  const copyObj = new Parse.Object('commesse')
+  copyObj.set('nome', nome)
+  copyObj.set('numero', numero)
+  copyObj.set('data_offerta', data_offerta)
+  copyObj.set('data_consegna', data_consegna)
+  copyObj
+    .save()
+    .then(newObj => clonePreventivi(commessaId, newObj.id))
 }
 
+/**
+ * Clona tutti i preventivi di una commessa
+ * @param {string} commessaId id della commessa da clonare
+ * @param {string} newId id della commessa appena clonata
+ */
 function clonePreventivi(commessaId, newId){
   new Parse.Query('preventivo')
     .equalTo('parent', commessaId)
@@ -141,10 +149,6 @@ function clonePreventivi(commessaId, newId){
           current => {
             var currentAttr = current.attributes
             const copyObj = new Parse.Object('preventivo')
-            console.log('***************************************')
-            console.log('OLD:', commessaId)
-            console.log('NEW:', newId)
-            console.log('currentAttr:', currentAttr)
             Object.keys(currentAttr).forEach(
               key => copyObj.set(key, currentAttr[key])
             )
@@ -156,13 +160,18 @@ function clonePreventivi(commessaId, newId){
     )
 }
 
+/**
+ * Clone la commessa. Parametri dela richiesta: 
+ *    - commessaId: id della vecchia commessa da clonare
+ *    - nome: nome della nuova commessa
+ *    - numero: numero della nuova commessa
+ *    - data_offerta: data_offerta della nuova commessa
+ *    - data_consegna: data_consegna della nuova commessa
+ */
 Parse.Cloud.define("cloneCommessa", (request) =>  {
-  // params: passed in the job call
-  // headers: from the request that triggered the job
-  // log: the ParseServer logger passed in the request
-  // message: a function to update the status message of the job object
   const { params, headers, log, message } = request;
-  cloneCommessa(params.commessaId)
+  console.log('++++++++++++++++++++++++DATE:', params.data_offerta, params.data_consegna)
+  cloneCommessa(params.commessaId, params.nome, params.numero, params.data_offerta, params.data_consegna)
   return 'req:', request;
 });
 
