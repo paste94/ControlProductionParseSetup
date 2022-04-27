@@ -175,31 +175,31 @@ Parse.Cloud.define("cloneCommessa", (request) =>  {
   return 'req:', request;
 });
 
+/**
+ * Calcola differenza (in minuti e in stringa) tra due date
+ * @param {date} dateFuture La data futura
+ * @param {date} dateNow la data passata
+ * @returns la differenza in minuti e una stringa contenente la differenza formattata bene
+ */
 function timeDiffCalc(dateFuture, dateNow) {
   let diffInMilliSeconds = Math.abs(dateFuture - dateNow) / 1000;
 
-  // calculate days
-  const days = Math.floor(diffInMilliSeconds / 86400);
-  diffInMilliSeconds -= days * 86400;
+  // Calcola i minuti totali (che servono poi per la somma nella commessa)
+  const totMin = Math.floor(diffInMilliSeconds / 60);
 
   // calculate hours
-  const hours = Math.floor(diffInMilliSeconds / 3600) % 24;
+  const hours = Math.floor(diffInMilliSeconds / 3600);
   diffInMilliSeconds -= hours * 3600;
 
   // calculate minutes
   const minutes = Math.floor(diffInMilliSeconds / 60) % 60;
   diffInMilliSeconds -= minutes * 60;
 
-  let difference = '';
-  if (days > 0) {
-    difference += (days === 1) ? `${days} g, ` : `${days} g, `;
-  }
-
-  difference += (hours === 0 || hours === 1) ? `${hours} h, ` : `${hours} h, `;
-
+  // Crea la stringa che indica ore e minuti
+  difference = (hours === 0 || hours === 1) ? `${hours} h, ` : `${hours} h, `;
   difference += (minutes === 0 || hours === 1) ? `${minutes} m` : `${minutes} m`; 
 
-  return difference;
+  return [totMin, difference];
 }
 
 /**
@@ -207,8 +207,33 @@ function timeDiffCalc(dateFuture, dateNow) {
  */
  Parse.Cloud.beforeSave('lavori', (request => {
   if (request.object.get( 'fine' ) !== undefined){
-    const diff = timeDiffCalc(request.object.get( 'fine' ), request.object.get( 'inizio' ))
-    console.log('*****DIFF******', timeDiffCalc(request.object.get( 'fine' ), request.object.get( 'inizio' )))
-    request.object.set('tempo', diff.toString())
+    const [totMin, difference] = timeDiffCalc(request.object.get( 'fine' ), request.object.get( 'inizio' ))
+
+    request.object
+      .set('tempo', difference)
+      .set('diffInMinutes', totMin)
   }
 }))
+
+/**
+ * Salva la somma dei minuti di ogni lavoro per una commessa
+ */
+Parse.Cloud.afterSave('lavori', request => {
+  new Parse.Query('lavori')
+      .equalTo('commessaId', request.object.get( 'commessaId' ))
+      .find()
+      .then(
+        results => {
+          let totMin = 0
+          results.forEach(
+            lavoro => {
+              console.log(lavoro)
+              totMin = totMin + lavoro.attributes.diffInMinutes
+            }
+          )
+          new Parse.Query('commesse')
+            .get( request.object.get( 'commessaId' ) )
+            .then( commessa => commessa.set( 'minutiReali', totMin ).save() )
+        }
+      )
+})
