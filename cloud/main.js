@@ -1,35 +1,6 @@
-Parse.Cloud.define('hello', (req) => {
-  req.log.info(req)
-  return 'Hi';
-});
-
-Parse.Cloud.define('asyncFunction', async (req) => {
-  await new Promise((resolve) => setTimeout(resolve,1000));
-  req.log.info(req)
-  return 'Hi async';
-});
-
-/*
-Parse.Cloud.beforeSave('impiegati', async (request) => {
-  console.log("CLOUD CODE - Impiegati beforeSave - checking for chip ", request.object.get('chip'))
-  await new Parse.Query('impiegati')
-    .equalTo( 'chip', request.object.get('chip') )
-    .find()
-    .then(impiegati => {
-      console.log("CLOUD CODE - Impiegati beforeSave - Impiegati length ", impiegati.length)
-      if( impiegati.length > 0){
-        console.log("*****NOPE*****")
-      }else{
-        console.log("*****OK*****")
-      }
-    })
-    .catch( error => console.error("Got an error " + error.code + " : " + error.message) );
-});
-*/
-
+// IMPIEGATI
 /**
  * Controlla che non vengano mai creati due elementi con CHIP uguale
- * TODO: Controlla la modifica!
  */
 Parse.Cloud.beforeSave('impiegati', async (request) => {
   console.log("CLOUD CODE - Impiegati beforeSave - checking for chip ", request.object.get('chip'))
@@ -46,29 +17,13 @@ Parse.Cloud.beforeSave('impiegati', async (request) => {
   }
 });
 
-
-/**
- * Quando salvo un nuovo lavoro, inserisco l'ID del nuovo lavoro 
- * nell'array dei lavori in corso di un determinato lavoratore
- */
-Parse.Cloud.afterSave('lavori', (request) => {
-  console.log("CLOUD CODE - Lavori afterSave triggered with ", request.object)
-  new Parse.Query('impiegati')
-    .get( request.object.get( 'impiegatoId' ) )
-    .then( impiegato => {
-      if(request.object.get( 'fine' ) === undefined){
-        impiegato.add('lavoriInCorso', request.object.id).save()
-      }else{        
-        impiegato.remove('lavoriInCorso', request.object.id).save()
-      }
-    })
-    .catch( error => console.error("Got an error " + error.code + " : " + error.message) );
-})
+// COMMESSE
 
 /**
  * Aggiunge i campi totPreventivo e totOre alla commessa creata, se non presenti. 
  */
 Parse.Cloud.beforeSave('commesse', (request => {
+  console.log('BEFORE SAVE COMMESSE: setta a 0 totOrePreventivo e totOre se non definiti')
   if (request.object.get( 'totPreventivo' ) === undefined){
     request.object.set('totPreventivo', 0)
   }
@@ -77,13 +32,19 @@ Parse.Cloud.beforeSave('commesse', (request => {
   }
 }))
 
+
+
+
+
+
+
 /**
  * Dopo il salvataggio o la modifica di un preventivo, calcola il totale delle ore e del
  * prezzo della commessa e aggiunge un campo alla commessa con totale delle ore e 
  * totale del prezzo.
  */
 Parse.Cloud.afterSave('preventivo', (request => {
-  console.log("CLOUD CODE - preventivo afterSave triggered with ", request.object)
+  console.log("AFTER SAVE PREVENTIVO: Calcola il totale delle ore del preventivo e lo salva in COMMESSE", request.object)
   new Parse.Query('preventivo')
     // Seleziona tutti gli elementi non eliminati
     .notEqualTo('eliminato', true)
@@ -109,11 +70,6 @@ Parse.Cloud.afterSave('preventivo', (request => {
         })
     })
 }))
-
-Parse.Cloud.define('hello', req => {
-  req.log.info('reqlog',req);
-  return 'req:', req;
-});
 
 /**
  * Clona la commessa
@@ -170,7 +126,7 @@ function clonePreventivi(commessaId, newId){
  */
 Parse.Cloud.define("cloneCommessa", (request) =>  {
   const { params, headers, log, message } = request;
-  console.log('++++++++++++++++++++++++DATE:', params.data_offerta, params.data_consegna)
+  console.log('CLONE COMMESSA', params.data_offerta, params.data_consegna)
   cloneCommessa(params.commessaId, params.nome, params.numero, params.data_offerta, params.data_consegna)
   return 'req:', request;
 });
@@ -206,6 +162,7 @@ function timeDiffCalc(dateFuture, dateNow) {
  * Calcola la differenza di tempo tra le due date in ORE 
  */
  Parse.Cloud.beforeSave('lavori', (request => {
+   console.log('BEFORE SAVE LAVORI: Calcola la differenza di tempo tra due lavori')
   if (request.object.get( 'fine' ) !== undefined){
     const [totMin, difference] = timeDiffCalc(request.object.get( 'fine' ), request.object.get( 'inizio' ))
 
@@ -219,6 +176,7 @@ function timeDiffCalc(dateFuture, dateNow) {
  * Salva la somma dei minuti di ogni lavoro per una commessa
  */
 Parse.Cloud.afterSave('lavori', request => {
+  console.log('AFTER SAVE LAVORI: somma i minuti di lavoro per una commessa')
   new Parse.Query('lavori')
       .equalTo('commessaId', request.object.get( 'commessaId' ))
       .find()
@@ -237,3 +195,48 @@ Parse.Cloud.afterSave('lavori', request => {
         }
       )
 })
+
+/**
+ * Archivia la commessa. 
+ * @params request: l'ID della commessa da archiviare
+ */
+Parse.Cloud.define("archiviaCommessa", (request) =>  {
+  const { params, headers, log, message } = request;
+  console.log('ARCHIVIA COMMESSA', params.id)
+  archiviaCommessa(params.id, true)
+  console.log('ARCHIVIATO TUTTO')
+  return request
+});
+
+/**
+ * Disrchivia la commessa. 
+ * @params request: l'ID della commessa da disarchiviare
+ */
+ Parse.Cloud.define("disarchiviaCommessa", (request) =>  {
+  const { params, headers, log, message } = request;
+  console.log('DISARCHIVIA COMMESSA', params.id)
+  archiviaCommessa(params.id, false)
+  return 'req:', request;
+});
+
+/**
+ * Archivia o disarchivia una commessa
+ * @param {bool} b Indica se la commessa deve essere archiviata o no
+ */
+function archiviaCommessa(id, b){
+  new Parse.Query('commesse')
+    .get(id)
+    .then( commessa =>commessa.set('archiviata', b).save() )
+  
+  new Parse.Query('lavori')
+    // Trova tutti i lavori con questa commessa come ID
+    .equalTo('commessaId', id)
+    .find()
+    .then(results => {
+      results.forEach(r => {
+        r
+          .set("archiviato", b)
+          .save()
+      })
+    })
+}
