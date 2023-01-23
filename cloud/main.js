@@ -212,7 +212,7 @@ Parse.Cloud.define("archiviaCommessa", (request) =>  {
  * Disrchivia la commessa. 
  * @params request: l'ID della commessa da disarchiviare
  */
- Parse.Cloud.define("disarchiviaCommessa", (request) =>  {
+Parse.Cloud.define("disarchiviaCommessa", (request) =>  {
   const { params, headers, log, message } = request;
   console.log('DISARCHIVIA COMMESSA', params.id)
   archiviaCommessa(params.id, false)
